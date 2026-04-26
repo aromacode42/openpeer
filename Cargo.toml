@@ -34,7 +34,7 @@ toml = "0.8"
 bincode = "2"
 tokio-stream = "0.1"
 pin-project = "1"
-dirs = "5"
+dirs = "6"
 
 [dev-dependencies]
 tempfile = "3"
