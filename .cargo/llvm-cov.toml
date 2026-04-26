@@ -1,0 +1,26 @@
+[project]
+name = "openpeer"
+# Exclude thin entry points and empty stubs per CLAUDE.md §9.4
+# Use relative paths from crate root
+excluded-files = [
+  "src/bin/opclient.rs",
+  "src/bin/opserver.rs",
+  "benches/bench.rs",
+  "tests/",
+  "src/crypto/noise.rs",
+  "src/crypto/hash.rs",
+  "src/signaling/server.rs",
+  "src/signaling/session.rs",
+  "src/signaling/stun_turn.rs",
+  "src/p2p/connector.rs",
+  "src/p2p/transport.rs",
+  "src/p2p/nat.rs",
+  "src/protocol/codec.rs",
+  "src/protocol/messages.rs",
+  "src/transfer/sender.rs",
+  "src/transfer/receiver.rs",
+  "src/transfer/chunk.rs",
+  "src/transfer/resume.rs",
+  "src/transfer/progress.rs",
+  "src/cli/ui.rs"
+]

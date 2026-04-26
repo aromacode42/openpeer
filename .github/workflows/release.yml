@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            ext: tar.gz
+            dir: openpeer-${{ github.ref_name }}-x86_64-unknown-linux-gnu
+          - os: macos-13
+            target: x86_64-apple-darwin
+            ext: tar.gz
+            dir: openpeer-${{ github.ref_name }}-x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            ext: tar.gz
+            dir: openpeer-${{ github.ref_name }}-aarch64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            ext: zip
+            dir: openpeer-${{ github.ref_name }}-x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install stable toolchain
+        run: rustup override set stable
+
+      - name: Build release
+        run: |
+          cargo build --release --bin opserver --bin opclient --target ${{ matrix.target }}
+          strip "target/${{ matrix.target }}/release/opserver" || true
+          strip "target/${{ matrix.target }}/release/opclient" || true
+
+      - name: Package (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          mkdir -p "${{ matrix.dir }}"
+          cp "target/${{ matrix.target }}/release/opserver" "${{ matrix.dir }}/"
+          cp "target/${{ matrix.target }}/release/opclient" "${{ matrix.dir }}/"
+          tar -czf "openpeer-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.ext }}" "${{ matrix.dir }}/"
+          sha256sum "openpeer-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.ext }}" >> SHA256SUMS
+        shell: bash
+
+      - name: Package (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          mkdir -p "${{ matrix.dir }}"
+          cp "target/${{ matrix.target }}/release/opserver.exe" "${{ matrix.dir }}/"
+          cp "target/${{ matrix.target }}/release/opclient.exe" "${{ matrix.dir }}/"
+          7z a -tzip "openpeer-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.ext }}" "${{ matrix.dir }}/"
+          certutil -hashfile "openpeer-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.ext }}" SHA256 | findstr /i "sha256" >> SHA256SUMS
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openpeer-${{ matrix.target }}.${{ matrix.ext }}
+          path: openpeer-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.ext }}
+
+  release:
+    name: release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: openpeer-*.{tar.gz,zip}
+          path: artifacts/
+
+      - name: Display downloaded files
+        run: find artifacts/ -type f
+
+      - name: Generate release notes from CHANGELOG
+        run: |
+          if command -v sed &>/dev/null; then
+            VERSION="${{ github.ref_name }}"
+            # Extract section between [Unreleased] and first ## [v* heading
+            sed -n '/\[Unreleased\]/,/^\[v/p' CHANGELOG.md | sed '$d' > body.md
+          else
+            echo "Release ${{ github.ref_name }}" > body.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: body.md
+          files: artifacts/*
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
