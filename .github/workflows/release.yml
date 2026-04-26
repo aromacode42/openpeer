@@ -33,7 +33,7 @@ jobs:
             ext: zip
             dir: openpeer-${{ github.ref_name }}-x86_64-pc-windows-msvc
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install stable toolchain
         run: rustup override set stable
