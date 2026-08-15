@@ -28,7 +28,7 @@ bytes = { version = "1", features = ["std"] }
 snow = "0.9"
 sha2 = "0.10"
 clap = { version = "4", features = ["derive"] }
-indicatif = "0.17"
+indicatif = "0.18"
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 bincode = "2"
