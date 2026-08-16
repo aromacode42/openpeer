@@ -30,7 +30,7 @@ sha2 = "0.10"
 clap = { version = "4", features = ["derive"] }
 indicatif = "0.17"
 serde = { version = "1", features = ["derive"] }
-toml = "0.8"
+toml = "1.1"
 bincode = "2"
 tokio-stream = "0.1"
 pin-project = "1"
